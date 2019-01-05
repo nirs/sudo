@@ -347,7 +347,10 @@ sudo_pam_begin_session(struct passwd *pw, char **user_envp[], sudo_auth *auth)
     }
 
     if (def_pam_session) {
-	rc = pam_open_session(pamh, 0);
+	/* Avoid pam_lastlog prompts unless running an actual shell. */
+	int silent = (!ISSET(sudo_mode, MODE_SHELL|MODE_LOGIN_SHELL)) ||
+		     ISSET(sudo_mode, MODE_IMPLIED_SHELL);
+	rc = pam_open_session(pamh, silent ? PAM_SILENT: 0);
 	switch (rc) {
 	case PAM_SUCCESS:
 	    break;
