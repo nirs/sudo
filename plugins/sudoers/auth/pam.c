@@ -527,6 +527,7 @@ converse(int num_msg, PAM_CONST struct pam_message **msg,
     char *pass;
     int n, type;
     int ret = PAM_SUCCESS;
+    const bool interactive = ISSET(sudo_mode, MODE_SHELL|MODE_LOGIN_SHELL);
     debug_decl(converse, SUDOERS_DEBUG_AUTH)
 
     if (num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG) {
@@ -580,7 +581,12 @@ converse(int num_msg, PAM_CONST struct pam_message **msg,
 		reply[n].resp = pass;	/* auth_getpass() malloc's a copy */
 		break;
 	    case PAM_TEXT_INFO:
-		if (pm->msg != NULL)
+		/*
+		 * pam may issue informational messages even when using
+		 * PAM_SILENT, like bad login info. Show these messages
+		 * only if we interact with a human.
+		 */
+		if (pm->msg != NULL && interactive)
 		    sudo_printf(SUDO_CONV_INFO_MSG, "%s\n", pm->msg);
 		break;
 	    case PAM_ERROR_MSG:
